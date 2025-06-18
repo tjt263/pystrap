@@ -12,6 +12,23 @@ print_usage() {
     echo "  -h               Show this help message"
 }
 
+make_executable() {
+    local path="$1"
+    chmod +x "$path"
+}
+
+ensure_python_shebang() {
+    local path="$1"
+    if [[ "$path" == *.py ]]; then
+        local first_line
+        first_line=$(head -n 1 "$path")
+        if [[ "$first_line" != "#!"* ]]; then
+            echo "[*] Inserting Python shebang into $path"
+            sed -i '1i#!/usr/bin/env python3' "$path"
+        fi
+    fi
+}
+
 # Parse options
 while getopts ":h" opt; do
     case ${opt} in
@@ -77,7 +94,10 @@ if [[ -z "$ENTRY" ]]; then
     echo "Error: No entrypoint found."
     exit 1
 fi
+
 ENTRY_PATH="$(realpath "$ENTRY")"
+make_executable "$ENTRY_PATH"
+ensure_python_shebang "$ENTRY_PATH"
 
 # Create launcher
 echo "[*] Creating launcher: /usr/local/bin/$COMMAND"
@@ -89,3 +109,4 @@ EOF
 
 sudo chmod +x /usr/local/bin/"$COMMAND"
 echo "[+] Tool installed. Run it with: $COMMAND"
+
